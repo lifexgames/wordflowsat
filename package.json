@@ -1,0 +1,10 @@
+{
+  "name": "wordflow",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.54.0",
+    "openai": "^5.12.0"
+  }
+}

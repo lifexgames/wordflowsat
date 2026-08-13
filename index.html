@@ -62,6 +62,14 @@ button,input,textarea,select{font:inherit}button{cursor:pointer}.hidden{display:
   .panel{padding:17px}.toolbar select{max-width:none!important}
   .form-grid{grid-template-columns:1fr}.full{grid-column:auto}
 }
+
+.mode-card{transition:.2s}.mode-card:hover{transform:translateY(-3px);border-color:#aaa5ff}
+.test-card{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:17px;border:1px solid var(--line);border-radius:15px}
+.test-card:hover{border-color:#aaa5ff}.test-info b{font-size:15px}.test-info small{display:block;color:var(--muted);margin-top:5px}
+.test-options{display:grid;gap:10px;margin:18px 0}.test-option{width:100%;text-align:left;padding:15px;border:1px solid var(--line);border-radius:13px;background:var(--panel);color:var(--text);font-weight:700}.test-option:hover{border-color:#aaa5ff}.test-option.selected{border-color:var(--accent);background:#f0efff;color:var(--accent)}
+.test-explanation{padding:14px;border-radius:13px;background:#f7f8fc;color:var(--muted);line-height:1.55;margin-top:15px}
+body.dark .test-explanation{background:#20232b}
+@media(max-width:850px){.test-card{align-items:flex-start;flex-direction:column}.test-card button{width:100%}}
 </style>
 </head>
 <body>
@@ -84,7 +92,7 @@ button,input,textarea,select{font:inherit}button{cursor:pointer}.hidden{display:
 
 <div id="app" class="app hidden">
 <aside class="sidebar"><div class="logo">Word<span>Flow</span></div><nav class="nav">
-<button class="active" data-view="home">🏠 &nbsp; Home</button><button data-view="words">📚 &nbsp; My Words</button><button data-view="learn">🧠 &nbsp; Learn</button><button data-view="quiz">✨ &nbsp; Quiz</button><button data-view="add">＋ &nbsp; Add Words</button>
+<button class="active" data-view="home">🏠 &nbsp; Home</button><button data-view="words">📚 &nbsp; My Words</button><button data-view="learn">🧠 &nbsp; Learn</button><button data-view="quiz">✨ &nbsp; Quiz</button><button data-view="add">＋ &nbsp; Add Words</button><button data-view="newtest">📝 &nbsp; New Test</button><button data-view="mytests">📋 &nbsp; My Tests</button>
 </nav></aside>
 <main class="main">
 <section id="home" class="view active"><div class="topbar"><div><div class="eyebrow">Vocabulary practice</div><h1 id="hello">Keep learning, one word at a time.</h1><p class="subtitle">Your words and progress are synced to your account.</p></div><div class="user-chip"><button class="secondary" id="themeBtn" onclick="toggleTheme()">🌙 Dark</button><button class="secondary" onclick="signOut()">Sign out</button><div class="avatar" id="avatar">W</div></div></div>
@@ -96,6 +104,60 @@ button,input,textarea,select{font:inherit}button{cursor:pointer}.hidden{display:
 <section id="learn" class="view"><div class="topbar"><div><div class="eyebrow">Practice</div><h1>Flashcards</h1><p class="subtitle">Click a card to reveal the meaning.</p></div></div><div class="flash-wrap"><div class="toolbar"><select id="learnCat"><option value="all">All categories</option></select></div><div class="progress"><i id="learnProgress" style="width:0%"></i></div><div id="flashArea"></div></div></section>
 
 <section id="quiz" class="view"><div class="topbar"><div><div class="eyebrow">Challenge</div><h1>Quick Quiz</h1><p class="subtitle">Choose the meaning that matches the word.</p></div></div><div class="quiz"><div class="toolbar"><select id="quizCat"><option value="all">All categories</option></select></div><div id="quizArea"></div></div></section>
+
+
+<section id="newtest" class="view">
+  <div class="topbar">
+    <div><div class="eyebrow">SAT test builder</div><h1>New Test</h1><p class="subtitle">Turn your own SAT material into an interactive practice test.</p></div>
+  </div>
+  <div id="testModeChooser" class="grid">
+    <div class="panel mode-card" style="cursor:pointer" onclick="chooseTestMode('convert')">
+      <div style="font-size:30px;margin-bottom:10px">📄</div>
+      <div class="eyebrow">Mode 1</div>
+      <h2>Convert uploaded test</h2>
+      <p class="subtitle" style="line-height:1.65">Upload an existing PDF, PNG/JPG, or document. WordFlow extracts the questions, passages, choices, and answers and turns them into an interactive practice test.</p>
+      <button class="primary" onclick="event.stopPropagation();chooseTestMode('convert')">Convert to Practice →</button>
+    </div>
+    <div class="panel mode-card" style="cursor:pointer" onclick="chooseTestMode('generate')">
+      <div style="font-size:30px;margin-bottom:10px">✨</div>
+      <div class="eyebrow">Mode 2</div>
+      <h2>Generate new SAT test</h2>
+      <p class="subtitle" style="line-height:1.65">Upload study material and AI creates original SAT-style multiple-choice questions based on the material.</p>
+      <button class="primary" onclick="event.stopPropagation();chooseTestMode('generate')">Generate New Test →</button>
+    </div>
+  </div>
+  <div id="testBuilder" class="panel hidden" style="max-width:900px;margin-top:18px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:15px">
+      <div><div class="eyebrow" id="builderEyebrow">Mode 1 · Convert uploaded test</div><h2 id="builderTitle" style="margin:5px 0">Turn your file into practice</h2></div>
+      <button class="secondary" onclick="backToTestModes()">← Change mode</button>
+    </div>
+    <p id="builderDescription" class="subtitle" style="line-height:1.6;margin-bottom:18px"></p>
+    <input id="testFile" type="file" accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg" style="margin-bottom:14px">
+    <div class="form-grid">
+      <div><label><b>Test type</b></label><select id="testType"><option value="sat">SAT-style mixed</option><option value="sat-reading-writing">SAT Reading & Writing</option><option value="sat-math">SAT Math</option></select></div>
+      <div><label><b>Number of questions</b></label><select id="questionCount"><option value="10">10</option><option value="15">15</option><option value="20" selected>20</option><option value="27">27</option><option value="44">44</option></select></div>
+      <div id="difficultyField"><label><b>Difficulty</b></label><select id="difficulty"><option>Mixed</option><option>Easy</option><option>Medium</option><option>Hard</option></select></div>
+      <div><label><b>Time limit</b></label><select id="timeLimit"><option value="0">No limit</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option></select></div>
+      <div class="full"><label><b>Test name</b></label><input id="testName" placeholder="e.g. SAT Practice — Set 1"></div>
+      <div class="full"><label><b>Extra instructions (optional)</b></label><textarea id="testInstructions" rows="4"></textarea></div>
+    </div>
+    <button class="primary" style="margin-top:15px" id="generateTestBtn" onclick="generateTest()">📄 Convert to Practice</button>
+    <div id="generateStatus" class="subtitle" style="margin-top:12px"></div>
+  </div>
+</section>
+
+<section id="mytests" class="view">
+  <div class="topbar"><div><div class="eyebrow">Your test library</div><h1>My Tests</h1><p class="subtitle">Saved tests, scores, and unfinished attempts.</p></div><button class="primary" onclick="showView('newtest')">＋ New Test</button></div>
+  <div class="panel"><div id="testsList" class="category-list"></div></div>
+</section>
+
+<section id="taketest" class="view">
+  <div class="topbar"><div><div class="eyebrow">SAT Practice</div><h1 id="takeTestTitle">Test</h1><p id="takeTestMeta" class="subtitle"></p></div><button class="secondary" onclick="showView('mytests')">Exit</button></div>
+  <div class="panel" style="max-width:850px;margin:auto">
+    <div class="progress"><i id="testProgress" style="width:0%"></i></div>
+    <div id="testQuestionArea"></div>
+  </div>
+</section>
 
 <section id="add" class="view"><div class="topbar"><div><div class="eyebrow">Build your library</div><h1>Add new words</h1><p class="subtitle">Add words to an existing category or create a new one.</p></div></div><div class="panel" style="max-width:850px"><div class="form-grid">
 <div class="full"><label><b>Category</b></label><select id="targetCat" onchange="toggleNewCategory()"><option value="__new__">＋ Create a new category</option></select></div>
@@ -117,13 +179,13 @@ You can also use: word: meaning"></textarea></div>
   <button data-view="words"><span>▤</span><small>Words</small></button>
   <button data-view="learn"><span>◉</span><small>Learn</small></button>
   <button data-view="quiz"><span>✦</span><small>Quiz</small></button>
-  <button data-view="add"><span>＋</span><small>Add</small></button>
+  <button data-view="add"><span>＋</span><small>Add</small></button><button data-view="newtest"><span>✎</span><small>Test</small></button><button data-view="mytests"><span>▣</span><small>Tests</small></button>
 </nav>
 
 <div id="toast" class="toast"></div>
 <script>
-const SUPABASE_URL="https://wdtuwcflnyxesywhasye.supabase.co";
-const SUPABASE_ANON_KEY="sb_publishable_GrUWqiPKnR-6GYRFltATqA_qLTbKWqR";
+const SUPABASE_URL="YOUR_SUPABASE_URL";
+const SUPABASE_ANON_KEY="YOUR_SUPABASE_PUBLISHABLE_KEY";
 let sb=null,user=null,profile=null,categories=[],words=[],progress=[],learnState={list:[],index:0},quizState={list:[],index:0,score:0,locked:false},authMode="signin";
 
 function $(id){return document.getElementById(id)}
@@ -149,7 +211,7 @@ async function signOut(){await sb.auth.signOut()}
 async function bootUser(){
  let r=await sb.auth.getUser(); user=r.data.user;if(!user)return;
  $("authScreen").classList.add("hidden");$("app").classList.remove("hidden");
- await loadProfile();await loadData();applyTheme();
+ await loadProfile();await loadData();await loadTests();applyTheme();
 }
 async function loadProfile(){
  let {data,error}=await sb.from("profiles").select("*").eq("id",user.id).maybeSingle();
@@ -190,7 +252,105 @@ async function addWords(){
  if(fresh.length){let r=await sb.from("words").insert(fresh.map(w=>({user_id:user.id,category_id:catId,word:w.word,meaning:w.meaning}))).select();if(r.error)return toast(r.error.message);words.push(...r.data)}
  $("bulkWords").value="";$("newCat").value="";$("catNote").value="";$("targetCat").value="__new__";updateUI();toast(`${fresh.length} new word${fresh.length===1?"":"s"} added`);showView("words")
 }
-function showView(id){document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));document.querySelectorAll(".nav button,.mobile-nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===id));if(id==="learn")startLearn();if(id==="quiz")startQuiz()}
+
+let tests=[], currentTest=null, currentTestIndex=0, currentAnswers={}, selectedTestMode="convert";
+
+function chooseTestMode(mode){
+  selectedTestMode=mode;
+  $("testModeChooser").classList.add("hidden");
+  $("testBuilder").classList.remove("hidden");
+  const convert=mode==="convert";
+  $("builderEyebrow").textContent=convert?"Mode 1 · Convert uploaded test":"Mode 2 · Generate new SAT test";
+  $("builderTitle").textContent=convert?"Turn your file into practice":"Create a new SAT-style test";
+  $("builderDescription").textContent=convert
+    ?"Upload an existing test. WordFlow extracts questions, passages, choices, and the answer key and turns them into an interactive practice test."
+    :"Upload study material. AI creates original SAT-style questions with four choices, answers, and explanations.";
+  $("generateTestBtn").textContent=convert?"📄 Convert to Practice":"✨ Generate SAT Test";
+  $("testInstructions").placeholder=convert
+    ?"Example: Preserve the original questions and choices as closely as possible."
+    :"Example: Focus on inference, transitions, words in context, and challenging SAT-style distractors.";
+  $("difficultyField").style.display=convert?"none":"block";
+}
+function backToTestModes(){
+  $("testBuilder").classList.add("hidden");
+  $("testModeChooser").classList.remove("hidden");
+  $("generateStatus").textContent="";
+  $("testFile").value="";
+}
+async function generateTest(){
+  const file=$("testFile").files[0];
+  if(!file){$("generateStatus").textContent="Please choose a file first.";return}
+  if(file.size>15*1024*1024){$("generateStatus").textContent="Please use a file smaller than 15 MB.";return}
+  $("generateTestBtn").disabled=true;
+  $("generateStatus").textContent=selectedTestMode==="convert"?"Reading your test and building the interactive version…":"Analyzing your material and generating the SAT-style test…";
+  try{
+    const fd=new FormData();
+    fd.append("file",file);fd.append("mode",selectedTestMode);
+    fd.append("testType",$("testType").value);fd.append("questionCount",$("questionCount").value);
+    fd.append("difficulty",$("difficulty").value);fd.append("timeLimit",$("timeLimit").value);
+    fd.append("title",$("testName").value.trim()||file.name.replace(/\.[^.]+$/,""));
+    fd.append("instructions",$("testInstructions").value.trim());
+    const session=(await sb.auth.getSession()).data.session;
+    if(!session)throw new Error("Please sign in first.");
+    const r=await fetch("/api/generate-test",{method:"POST",headers:{Authorization:`Bearer ${session.access_token}`},body:fd});
+    const result=await r.json();
+    if(!r.ok)throw new Error(result.error||"Could not create the test.");
+    await loadTests();toast(selectedTestMode==="convert"?"Test converted":"SAT-style test created");
+    setTimeout(()=>openTest(result.test_id),350);
+  }catch(e){console.error(e);$("generateStatus").textContent=e.message||"Something went wrong."}
+  finally{$("generateTestBtn").disabled=false}
+}
+async function loadTests(){
+  if(!user||!$("testsList"))return;
+  const r=await sb.from("tests").select("*").order("created_at",{ascending:false});
+  if(r.error){console.error(r.error);tests=[]}else tests=r.data||[];
+  renderTests();
+}
+function renderTests(){
+  if(!$("testsList"))return;
+  if(!tests.length){$("testsList").innerHTML='<div class="empty">No tests yet. Create your first test.</div>';return}
+  $("testsList").innerHTML=tests.map(t=>{
+    const score=t.score===null||t.score===undefined?"—":`${t.score}%`;
+    return `<div class="test-card"><div class="test-info"><b>${esc(t.title)}</b><small>${t.question_count} questions · ${esc(t.difficulty||"Mixed")} · ${(t.status||"not_started").replace("_"," ")} · Score: ${score}</small></div><button class="primary" onclick="openTest('${t.id}')">${t.status==="completed"?"Review":"Start test"}</button></div>`;
+  }).join("");
+}
+async function openTest(id){
+  const r=await sb.from("tests").select("*").eq("id",id).single();
+  if(r.error)return toast(r.error.message);
+  currentTest=r.data;currentTestIndex=0;currentAnswers={};showView("taketest");renderTestQuestion();
+}
+function renderTestQuestion(){
+  const qs=currentTest.questions||[];
+  $("takeTestTitle").textContent=currentTest.title;
+  $("takeTestMeta").textContent=`${qs.length} questions · ${currentTest.difficulty||"Mixed"}${currentTest.time_limit?` · ${currentTest.time_limit} min`:""}`;
+  if(currentTestIndex>=qs.length){finishTest();return}
+  $("testProgress").style.width=((currentTestIndex+1)/qs.length*100)+"%";
+  const q=qs[currentTestIndex],selected=currentAnswers[currentTestIndex];
+  $("testQuestionArea").innerHTML=`<div class="eyebrow">Question ${currentTestIndex+1} of ${qs.length}</div>
+  ${q.passage?`<div class="panel" style="box-shadow:none;background:var(--bg);margin:15px 0;line-height:1.65">${esc(q.passage)}</div>`:""}
+  <h2 style="line-height:1.45;margin:10px 0 20px">${esc(q.question)}</h2>
+  <div class="test-options">${(q.options||[]).map((o,i)=>`<button class="test-option ${selected===i?"selected":""}" onclick="chooseTestAnswer(${i})"><b>${String.fromCharCode(65+i)}.</b> ${esc(o)}</button>`).join("")}</div>
+  <div style="display:flex;justify-content:space-between;gap:10px;margin-top:20px"><button class="secondary" onclick="previousTestQuestion()" ${currentTestIndex===0?"disabled":""}>← Previous</button><button class="primary" onclick="nextTestQuestion()">${currentTestIndex===qs.length-1?"Finish":"Next →"}</button></div>`;
+}
+function chooseTestAnswer(i){currentAnswers[currentTestIndex]=i;renderTestQuestion()}
+function previousTestQuestion(){if(currentTestIndex>0){currentTestIndex--;renderTestQuestion()}}
+function nextTestQuestion(){if(currentAnswers[currentTestIndex]===undefined){toast("Choose an answer first.");return}currentTestIndex++;renderTestQuestion()}
+async function finishTest(){
+  const qs=currentTest.questions||[];let correct=0;qs.forEach((q,i)=>{if(currentAnswers[i]===q.answer)correct++});
+  const score=Math.round(correct/qs.length*100);
+  const answers=qs.map((q,i)=>({selected:currentAnswers[i]??null,correct:q.answer}));
+  const r=await sb.from("tests").update({status:"completed",score,answers,completed_at:new Date().toISOString()}).eq("id",currentTest.id);
+  if(r.error)return toast(r.error.message);
+  currentTest.score=score;currentTest.status="completed";loadTests();
+  $("testQuestionArea").innerHTML=`<div style="text-align:center;padding:35px"><div class="eyebrow">Test complete</div><div class="word" style="font-size:56px">${score}%</div><p class="subtitle">${correct} out of ${qs.length} correct.</p><div style="display:flex;justify-content:center;gap:10px;margin-top:18px"><button class="secondary" onclick="reviewTest()">Review answers</button><button class="primary" onclick="showView('mytests')">Back to My Tests</button></div></div>`;
+}
+function reviewTest(){
+  const qs=currentTest.questions||[];let h="";
+  qs.forEach((q,i)=>{const chosen=currentAnswers[i],ok=chosen===q.answer;h+=`<div style="padding:18px 0;border-bottom:1px solid var(--line)"><b>${i+1}. ${esc(q.question)}</b><p style="color:${ok?"var(--good)":"var(--bad)"}">Your answer: ${chosen===undefined?"Not answered":esc(q.options?.[chosen]||"")}</p><p style="color:var(--good)">Correct: ${esc(q.options?.[q.answer]||"")}</p><div class="test-explanation">${esc(q.explanation||"")}</div></div>`});
+  $("testQuestionArea").innerHTML=h+`<button class="primary" style="margin-top:18px" onclick="showView('mytests')">Back to My Tests</button>`;
+}
+
+function showView(id){document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));document.querySelectorAll(".nav button,.mobile-nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===id));if(id==="learn")startLearn();if(id==="quiz")startQuiz();if(id==="mytests")loadTests()}
 document.querySelectorAll(".nav button,.mobile-nav button").forEach(b=>b.onclick=()=>showView(b.dataset.view));
 function startLearn(){let cat=$("learnCat").value||"all";let list=words.filter(w=>cat==="all"||w.category_id===cat);learnState={list:shuffle(list),index:0};renderFlash()}
 function renderFlash(){let s=learnState;if(!s.list.length){$("flashArea").innerHTML='<div class="panel empty">No words here yet.</div>';$("learnProgress").style.width="0%";return}let w=s.list[s.index%s.list.length];$("learnProgress").style.width=((s.index+1)/s.list.length*100)+"%";$("flashArea").innerHTML=`<div class="flashcard" id="fc" onclick="flipCard()"><div class="card-inner"><div class="face"><span class="tag">${esc(categoryName(w.category_id))}</span><div class="word">${esc(w.word)}</div><div class="hint">Click to reveal meaning</div></div><div class="face back"><span class="tag">${esc(categoryName(w.category_id))}</span><div class="meaning">${esc(w.meaning)}</div><div class="hint">How well did you know it?</div></div></div></div><div class="flash-actions"><button class="again" onclick="nextLearn(false)">↻ Again</button><button class="good" onclick="nextLearn(true)">✓ I know it</button></div>`}
